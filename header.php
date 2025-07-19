@@ -45,7 +45,7 @@ if (!isset($ptitle)) $ptitle="apexart";
 ?>
 </span>
 
-<?phpinclude "links.php";
+<?php include "links.php";
 ?>
 
 

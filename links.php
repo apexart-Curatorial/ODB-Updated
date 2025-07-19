@@ -2,9 +2,9 @@
 <br/>
 <a href="index.php">Home</a>&nbsp;&nbsp;|&nbsp;&nbsp;
 
-<?// if (isset($_SESSION['accessLevel']) && ($_SESSION['accessLevel'])>=3){ ?>
+
 	<a href="edit.php">Add New</a>&nbsp;&nbsp;|&nbsp;&nbsp;
-<?// } ?>
+
 		
 
 

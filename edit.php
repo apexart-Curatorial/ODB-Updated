@@ -1,7 +1,7 @@
 <?php
 			error_reporting(E_ALL);
+			require_once 'DBX.php';
 			session_start();
-			include "DBX.php";
 			include "loginCheck.php";
 			if (!isset($_SESSION['accessLevel']) || ($_SESSION['accessLevel'])==1)
 			{
@@ -9,10 +9,29 @@
 				die();
 			}
 				
-			include "header.php";
+		
 
-			$d=new DBX();
+			$d = new DBX();
+			$record = [];
 			//$count=$d->Count();
+			if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+			    $record = $d->getPersonByID($_GET['id']);
+			    if (!$record) {
+			        die("Record not found.");
+			    }
+			} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			    if (!empty($_POST['id'])) {
+			        $d->updateSubmission($_POST);
+			        header("Location: results.php");
+			        exit();
+			    } else {
+			        die("Error: Missing ID for update.");
+			    }
+			} else {
+			    die("Invalid request.");
+			}
+
+			require_once "header.php";
 			if (isset($_REQUEST["stuffISsubmitted"])) 
 			{
 				if ($_REQUEST["person"]==0) //if NEW PERSON and stuffISsubmitted just create the person and then die.
@@ -61,11 +80,13 @@
 ?>
 <center>	
 	<h4>Add/Edit People Records.</h4>
-	<form action='<?=$_SERVER['PHP_SELF']?>' method="GET" >
+	<form method="POST" action="edit.php">
 <?php
 			$j=0;
 		//`firstname`, `lastname`, `company`, `address`, `city`,  `state`, `zip`, `country`, `phone`, `fax`, `email`, `comments`,  `creditLine`, `invitation`,`domestic`, `foreign`, `press`, `nn`, `feedback`,  `member`, `foundation`, `consulate`,  `donor`, `inKindDonor`,  `potDonor`, `edu`, `funder` 
-
+if (!empty($record['id'])) {
+    echo "<input type=\"hidden\" name=\"id\" value=\"" . htmlspecialchars($record['id']) . "\">";
+}
 				echo '<table width="800">';
 				echo "<tr><td width='5%' rowspan='2'>";
 				
@@ -74,34 +95,34 @@
 				
 				echo "&nbsp;</td><td width='20%' rowspan='2'>";
 				//unset($s["firstname"]);
-				echo "First Name<br/><input type='textbox' value='".(isset($s["firstname"])?$s["firstname"]:"")."' name='firstname'/>";
+				echo "First Name<br/><input type=\"text\" name=\"firstname\" value=\"" . htmlspecialchars($record['firstname'] ?? '') . "\"><br>";
 				
 				echo "<br/><br/>";
-				echo "Last Name<br/><input type='textbox' value='".(isset($s["lastname"])?$s["lastname"]:"")."' name='lastname'/>";
+				echo "Last Name<br/><input type=\"text\" name=\"lastname\" value=\"" . htmlspecialchars($record['lastname'] ?? '') . "\"><br>";
 				
 				echo "<br/><br/>";
-				echo "Title<br/><input type='textbox' value='".(isset($s["title"])?$s["title"]:"")."' name='title'/>";
+				echo "Title<br/><input type=\"text\" name=\"title\" value=\"" . htmlspecialchars($record['title'] ?? '') . "\"><br>";
 				
 				echo "<br/><br/>";
-				echo "Company<br/><input type='textbox' value='".(isset($s["company"])?$s["company"]:"")."' name='company'/>";
+				echo "Company<br/><input type=\"text\" name=\"company\" value=\"" . htmlspecialchars($record['company'] ?? '') . "\"><br>";
 				
 				echo "<br/><br/>";
-				echo "Phone<br/><input type='textbox' value='".(isset($s["phone"])?$s["phone"]:"")."' name='phone'/>";
+				echo "Phone<br/><input type=\"text\" name=\"phone\" value=\"" . htmlspecialchars($record['phone'] ?? '') . "\"><br>";
 				
 				echo "<br/><br/>";
-				echo "Fax<br/><input type='textbox' value='".(isset($s["fax"])?$s["fax"]:"")."' name='fax'/>";
+				echo "Fax<br/><input type=\"text\" name=\"fax\" value=\"" . htmlspecialchars($record['fax'] ?? '') . "\"><br>";
 				
 				
 				
 				echo "</td><td rowspan='2' style='text-align:right;' width='30%'>";
-				echo "Address&nbsp;&nbsp;<br/><input style='width:290px' type='textbox' value='".(isset($s["address"])?$s["address"]:"")."' name='address'/><br/>";
-				echo "City&nbsp;&nbsp;<br/><input style='width:140px' type='textbox' value='".(isset($s["city"])?$s["city"]:"")."' name='city'/><br/>";
-				echo "State&nbsp;&nbsp;<br/><input style='width:90px' type='textbox' value='".(isset($s["state"])?$s["state"]:"")."' name='state'/><br/>";
-				echo "Zip&nbsp;&nbsp;<br/><input style='width:80px' type='textbox' value='".(isset($s["zip"])?$s["zip"]:"")."' name='zip'/><br/>";
-				echo "Country&nbsp;&nbsp;<br/><input  type='textbox' value='".(isset($s["country"])?$s["country"]:"")."' name='country'/>";
+				echo "Address&nbsp;&nbsp;<br/><input type=\"text\" name=\"address\" value=\"" . htmlspecialchars($record['address'] ?? '') . "\"><br>";
+				echo "City&nbsp;&nbsp;<br/><input type=\"text\" name=\"city\" value=\"" . htmlspecialchars($record['city'] ?? '') . "\"><br>";
+				echo "State&nbsp;&nbsp;<br/><input type=\"text\" name=\"state\" value=\"" . htmlspecialchars($record['state'] ?? '') . "\"><br>";
+				echo "Zip&nbsp;&nbsp;<br/><input type=\"text\" name=\"zip\" value=\"" . htmlspecialchars($record['zip'] ?? '') . "\"><br>";
+				echo "Country&nbsp;&nbsp;<br/><input type=\"text\" name=\"country\" value=\"" . htmlspecialchars($record['country'] ?? '') . "\"><br>";
 				echo "<br/><br/>";
-				echo "Email&nbsp;&nbsp;<br/><input style='width:290px' type='textbox' value='".(isset($s["email"])?$s["email"]:"")."' name='email'/>";
-				echo "<br/>Alternative contact&nbsp;&nbsp;<br/><input style='width:290px' type='textbox' value='".(isset($s["alt"])?$s["alt"]:"")."' name='alt'/>";
+				echo "Email&nbsp;&nbsp;<br/><input type=\"text\" name=\"email\" value=\"" . htmlspecialchars($record['email'] ?? '') . "\"><br>";
+				echo "<br/>Alternative contact&nbsp;&nbsp;<br/><input type=\"text\" name=\"alt\" value=\"" . htmlspecialchars($record['alt'] ?? '') . "\"><br>";
 
 				
 				//echo (isset($s["address"])?$s["address"]:"")."<br/>".(isset($s["city"])?$s["city"]:"").", ".(isset($s["state"])?$s["state"]:"")."<br/>".(isset($s["zip"])?$s["zip"]:"")." ".(isset($s["country"])?$s["country"]:"");
@@ -113,8 +134,8 @@
 				
 				echo "</td><td rowspan='1' width='20%'>";
 
-				//echo "Comments<br/><input type='textbox' value='".(isset($s["comments"])?$s["comments"]:"")."' name='comments'/>";
-				echo "Comments<br/><textarea cols='20' rows='9' wrap='ON' name='comments' >".(isset($s["comments"])?$s["comments"]:"")."</textarea>";
+				//echo "Comments<br/><input type='text' value='".(isset($s["comments"])?$s["comments"]:"")."' name='comments'/>";
+				echo "Comments<br/><textarea cols='20' rows='9' wrap='ON' name='comments' >". htmlspecialchars($record['comments'] ?? '') ."</textarea>";
 				
 				echo "&nbsp</td><td width='15%' rowspan='2'>";
 				
@@ -138,7 +159,7 @@
 				
 				
 				echo "<td>";
-				echo "Credit&nbsp;Line<br/><input type='textbox' value='".(isset($s["creditLine"])?$s["creditLine"]:"")."' name='creditLine'/>";
+				echo "Credit&nbsp;Line<br/><input type='text' value='". htmlspecialchars($record['creditLine'] ?? '') ."' name='creditLine'/>";
 				
 				//echo "</td></tr><tr><td colspan='5'>&nbsp;";
 
@@ -153,13 +174,13 @@
 			
 			
 			<input type="hidden" value="<?=(isset($_GET["person"])?$_GET["person"]:0)?>" name="person" />
-			<input type="submit" value="<?=(isset($_GET["person"])?"UPDATE":"CREATE")?>" name="stuffISsubmitted" onclick="return confirm('Are you sure ?')"  />
+			<input type="submit" value="UPDATE" name="stuffISsubmitted" onclick="return confirm('Are you sure ?')"  />
 			<br/>
 
 		</form>
 		
 <a href="<? if (isset($_SESSION['lastSearch'])) echo $_SESSION['lastSearch']; else echo '#'; ?>">Back to Last Search</a><br/><br/><br/>
-<?phpif (isset($_GET["person"])) echo "<a href='addDonation.php?person=".$_GET["person"]."' title='Add Donations'>Add Donations</a><br/><br/>";
+<?php if (isset($_GET["person"])) echo "<a href='addDonation.php?person=".$_GET["person"]."' title='Add Donations'>Add Donations</a><br/><br/>";
 include("donationView.php");
 
 

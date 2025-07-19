@@ -168,10 +168,14 @@ class DBX {
     }
 
     public function deletePerson(int $id): void {
-        $stmt = $this->conn->prepare("UPDATE people SET personDeleted = 1 WHERE id = :id");
+        $stmt = $this->conn->prepare("UPDATE people SET `personDeleted` = 1 WHERE id = :id");
         $stmt->execute([':id' => $id]);
     }
-
+    public function getPersonByID($id) {
+    $stmt = $this->conn->prepare("SELECT * FROM people WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
     public function SearchDonations(string $date1, string $date2, float $amount1, float $amount2, string $comment = ''): array {
         $query = "SELECT *, UNIX_TIMESTAMP(d.date) as unixDate, ammount as damount
                   FROM donations d
@@ -202,13 +206,15 @@ class DBX {
     }
 
     public function createDonation(array $row): void {
-        $stmt = $this->conn->prepare("INSERT INTO donations (date, ammount, paymentMethod, donorID, position) VALUES (:date, :ammount, :paymentMethod, :donorID, :position)");
+
+        $stmt = $this->conn->prepare("INSERT INTO donations (date, ammount, paymentMethod, donorID, position, oldAmount) VALUES (:date, :ammount, :paymentMethod, :donorID, :position, :oldAmount)");
         $stmt->execute([
-            ':date' => $row['date'],
-            ':ammount' => $row['ammount'],
-            ':paymentMethod' => $row['paymentMethod'],
-            ':donorID' => $row['donorID'],
-            ':position' => $this->donationPosition
+            ':date' => $row['date'] ?? '',
+            ':ammount' => $row['ammount'] ?? 0,
+            ':paymentMethod' => $row['paymentMethod'] ?? '',
+            ':donorID' => $row['donorID'] ?? 0,
+            ':position' => $row['position'] ?? 10,
+            ':oldAmount' => $row['oldAmount'] ?? 0
         ]);
 
         $stmt = $this->conn->prepare("UPDATE people SET hasDonated = 1 WHERE id = :id");
@@ -216,28 +222,31 @@ class DBX {
     }
 
     public function UpdateSubmission(array $row): void {
-        $fields = ['firstname', 'lastname', 'company', 'address', 'city', 'state', 'zip', 'country', 'phone', 'fax', 'email', 'comments', 'creditLine', 'title', 'alt'];
+    $fields = [
+        'firstname', 'lastname', 'company', 'address', 'city', 'state', 'zip',
+        'country', 'phone', 'fax', 'email', 'comments', 'creditLine', 'title', 'alt'
+    ];
 
-        $sql = "UPDATE people SET ";
-        $params = [];
+    $sql = "UPDATE people SET ";
+    $params = [];
 
-        foreach ($fields as $field) {
-            $sql .= "$field = :$field, ";
-            $params[":$field"] = $row[$field] ?? '';
-        }
-
-        foreach ($this->statCols as $column) {
-            $sql .= "$column = :$column, ";
-            $params[":$column"] = $row[$column] ?? 0;
-        }
-
-        $sql = rtrim($sql, ", ") . " WHERE id = :id";
-        $params[":id"] = $row['id'];
-
-        $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
+    foreach ($fields as $field) {
+        $sql .= "`$field` = :$field, ";
+        $params[":$field"] = $row[$field] ?? '';
     }
 
+    foreach ($this->statCols as $column) {
+        $sql .= "`$column` = :$column, ";
+        $params[":$column"] = $row[$column] ?? 0;
+    }
+
+    $sql = rtrim($sql, ", ") . " WHERE `id` = :id";
+    $params[":id"] = $row['id'];
+
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute($params);
+}
+    
     public function createSubmission(array $row): bool {
         $stmt = $this->conn->prepare("SELECT COUNT(*) FROM people WHERE firstname = :firstname AND lastname = :lastname");
         $stmt->execute([
@@ -264,7 +273,8 @@ class DBX {
         }
 
         $columns = array_merge($fields, array_values($this->statCols));
-        $sql = "INSERT INTO people (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
+        $escaped_columns = array_map(fn($col) => "`$col`", $columns);
+        $sql = "INSERT INTO people (" . implode(", ", $escaped_columns) . ") VALUES (" . implode(", ", $values) . ")";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);

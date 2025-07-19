@@ -1,41 +1,58 @@
 <?php
-			error_reporting(E_ALL);
-			session_start();
-			include "DBX.php";
-			include "loginCheck.php";
-			include "header.php";
+error_reporting(E_ALL);
+session_start();
+require_once "DBX.php";
+require_once "loginCheck.php";
+require_once "header.php";
 
-			$d=new DBX();
-			//$count=$d->Count();
-			if (isset($_REQUEST["stuffISsubmitted"])) 
-			{
+$d = new DBX();
+$id = [];
 
-				$d->createDonation($_REQUEST);
-				echo "<font color='green'>Donation Created.</font><br/><br/>"; //die(); 
-		
-			}	
-			// id  date  ammount  paymentMethod  donorID  position 
+if (isset($_GET['id'])) {
+    $id = $d->getPersonByID($_GET['id']);
+    if (!$id) {
+        die("Person not found.");
+    }
+} else {
+    die("No person ID specified.");
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["stuffISsubmitted"])) {
+    $d->createDonation($_POST);
+    echo "<font color='green'>Donation Created.</font><br/><br/>";
+}
 ?>
-	<h4>Add a Donation.</h4> <br/>
-	<form action='<?=$_SERVER['PHP_SELF']?>' method="GET" >
-			Date:<br/>
- 			<input type="text" name="date" value="" />&nbsp;&nbsp;&nbsp;<i><?=date("Y-m-d");?></i><br/><br/>
-			Amount:  <br/>
-			<input type="text" name="ammount" value="" /><i>&nbsp;&nbsp;&nbsp;100</i><br/><br/>
-			Payment Method: <br/>
-			<input type="text" name="paymentMethod" value="" />&nbsp;&nbsp;&nbsp;Mastercard<i></i><br/><br/>
-			<input type="hidden" name="position" value="10" /> <!-- &nbsp;&nbsp;&nbsp;<i><?=$d->donationPosition?></i><br/><br/> -->
-			<input type="hidden" value="<?=(isset($_GET["person"])?$_GET["person"]:0)?>" name="donorID" />
-			<input type="hidden" value="<?=(isset($_GET["person"])?$_GET["person"]:0)?>" name="person" />
-			<input type="submit" value="Create Donation for person <?=$_GET["person"]?>" name="stuffISsubmitted" onclick="return confirm('Are you sure you want to add the donation?')" />
-			<br/>
 
-		</form>
-	<a href="<?=$_SESSION['lastSearch']?>">Back to Last Search</a><br/><br/><br/>
+<h4>Add a Donation</h4>
+<p>For: <strong><?= htmlspecialchars($id['firstname'] . ' ' . $id['lastname']) ?></strong></p>
+
+<form action="<?= htmlspecialchars($_SERVER['PHP_SELF'] . '?id=' . urlencode($_GET['id'])) ?>" method="POST">
+    <input type="hidden" name="id" value="<?= htmlspecialchars($_GET['id']) ?>">
+    <input type="hidden" name="donorID" value="<?= htmlspecialchars($_GET['id']) ?>">
+    <input type="hidden" name="position" value="10">
+
+    <label>Date:</label><br>
+    <input type="text" name="date" value=""><i>&nbsp;&nbsp;&nbsp;<?= date("Y-m-d") ?></i><br><br>
+
+    <label>Amount:</label><br>
+    <input type="text" name="ammount" value=""><i>&nbsp;&nbsp;&nbsp;100</i><br><br>
+
+    <label>Payment Method:</label><br>
+    <input type="text" name="paymentMethod" value=""><i>&nbsp;&nbsp;&nbsp;Mastercard</i><br><br>
+
+    <input type="submit" 
+           value="Create Donation for <?= htmlspecialchars($id['firstname']) ?>" 
+           name="stuffISsubmitted"
+           onclick="return confirm('Are you sure you want to add the donation?')">
+</form>
+
+<br>
+<a href="<?= htmlspecialchars($_SESSION['lastSearch'] ?? 'search.php') ?>">Back to Last Search</a><br><br><br>
+
 <?php
-include("donationView.php");
-include("footer.php"); 
-
+// Load and display recent donations for this person
+include "donationView.php";
+include "footer.php";
 ?>
 
 			
